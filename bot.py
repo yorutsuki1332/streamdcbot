@@ -164,26 +164,28 @@ class ReactionRoleBot(commands.Bot):
     async def _setup_custom_emoji(self, guild):
         """Set up custom emoji for the welcome button"""
         try:
-            # Check if the emoji already exists
             emoji_name = "violette_unicorn"
             existing_emoji = discord.utils.get(guild.emojis, name=emoji_name)
             
+            # Always recreate the emoji to update it with the new image
             if existing_emoji:
-                self.custom_emoji = existing_emoji
-                self.logger.info(f"Custom emoji {emoji_name} already exists")
-                return
+                try:
+                    await existing_emoji.delete(reason="Updating emoji with new image")
+                    self.logger.info(f"Deleted old emoji {emoji_name} to update with new image")
+                except Exception as e:
+                    self.logger.warning(f"Could not delete old emoji: {e}")
             
-            # Try to create the emoji if we have permissions
+            # Create the emoji with the new image
             if guild.me.guild_permissions.manage_emojis:
                 try:
                     with open('button_icon.png', 'rb') as image:
                         emoji = await guild.create_custom_emoji(
                             name=emoji_name,
                             image=image.read(),
-                            reason="Welcome button icon"
+                            reason="Welcome button icon - updated image"
                         )
                     self.custom_emoji = emoji
-                    self.logger.info(f"Created custom emoji: {emoji_name}")
+                    self.logger.info(f"Created/updated custom emoji: {emoji_name}")
                 except Exception as e:
                     self.logger.warning(f"Could not create custom emoji: {e}")
                     self.custom_emoji = None
