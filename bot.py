@@ -112,14 +112,48 @@ class ReactionRoleBot(commands.Bot):
         """Send welcome message automatically to the first available channel"""
         from commands import WelcomeView
         
+        welcome_text = "歡迎來到澪夜聯邦！"
+        
+        # Check if we already have a stored welcome message
+        stored_welcome = await self.config_manager.get_welcome_message(guild.id)
+        if stored_welcome:
+            try:
+                # Try to get the existing message
+                channel = guild.get_channel(stored_welcome['channel_id'])
+                if channel:
+                    message = await channel.fetch_message(stored_welcome['message_id'])
+                    if (message.content == welcome_text and 
+                        message.components and 
+                        message.author == guild.me):
+                        # Message exists and is current, no need to send again
+                        self.logger.info(f"Welcome message already exists in {guild.name} #{channel.name}")
+                        return
+            except (discord.NotFound, discord.Forbidden):
+                # Message doesn't exist anymore, remove from config
+                await self.config_manager.remove_welcome_message(guild.id)
+        
         # Find the first channel where bot can send messages
         for channel in guild.text_channels:
             if channel.permissions_for(guild.me).send_messages:
                 try:
+                    # Delete any old welcome messages in this channel
+                    async for message in channel.history(limit=50):
+                        if (message.author == guild.me and 
+                            message.content == welcome_text and 
+                            message.components):
+                            await message.delete()
+                            self.logger.info(f"Deleted old welcome message in {guild.name} #{channel.name}")
+                    
+                    # Send new welcome message
                     view = WelcomeView()
-                    await channel.send("歡迎來到澪夜聯邦！", view=view)
+                    message = await channel.send(welcome_text, view=view)
+                    
+                    # Store the message reference
+                    await self.config_manager.set_welcome_message(guild.id, channel.id, message.id)
+                    
                     self.logger.info(f"Automatically sent welcome message in {guild.name} #{channel.name}")
                     break
+                    
                 except discord.Forbidden:
                     continue
                 except Exception as e:

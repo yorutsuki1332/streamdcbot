@@ -157,3 +157,35 @@ class ConfigManager:
         if cleaned > 0:
             await self.save_config()
             self.logger.info(f"Cleaned up {cleaned} invalid configurations")
+    
+    async def set_welcome_message(self, guild_id: int, channel_id: int, message_id: int) -> bool:
+        """Store welcome message reference"""
+        async with self._lock:
+            guild_key = str(guild_id)
+            if guild_key not in self.configs:
+                self.configs[guild_key] = {}
+            
+            self.configs[guild_key]['welcome_message'] = {
+                'channel_id': channel_id,
+                'message_id': message_id
+            }
+            
+            await self.save_config()
+            return True
+    
+    async def get_welcome_message(self, guild_id: int) -> Optional[Dict]:
+        """Get welcome message reference"""
+        guild_key = str(guild_id)
+        if guild_key in self.configs:
+            return self.configs[guild_key].get('welcome_message')
+        return None
+    
+    async def remove_welcome_message(self, guild_id: int) -> bool:
+        """Remove welcome message reference"""
+        async with self._lock:
+            guild_key = str(guild_id)
+            if guild_key in self.configs and 'welcome_message' in self.configs[guild_key]:
+                del self.configs[guild_key]['welcome_message']
+                await self.save_config()
+                return True
+        return False

@@ -204,12 +204,49 @@ async def setup_commands(bot):
     @bot.command(name='welcome_message', aliases=['wm'])
     @commands.has_permissions(administrator=True)
     async def welcome_message(ctx):
-        """Send a welcome message with an entry button."""
-        # Create the button view
-        view = WelcomeView()
+        """Send or refresh the welcome message with an entry button."""
+        welcome_text = "歡迎來到澪夜聯邦！"
         
-        # Send the welcome message with the button
-        await ctx.send("歡迎來到澪夜聯邦！", view=view)
+        # Check if we have a stored welcome message
+        stored_welcome = await bot.config_manager.get_welcome_message(ctx.guild.id)
+        if stored_welcome:
+            try:
+                # Try to delete the existing message
+                channel = ctx.guild.get_channel(stored_welcome['channel_id'])
+                if channel:
+                    message = await channel.fetch_message(stored_welcome['message_id'])
+                    await message.delete()
+                    await ctx.send("🗑️ Deleted old welcome message.")
+            except (discord.NotFound, discord.Forbidden):
+                pass  # Message already deleted or can't delete
+            
+            # Remove from config
+            await bot.config_manager.remove_welcome_message(ctx.guild.id)
+        
+        # Also check for any other welcome messages in current channel
+        async for message in ctx.channel.history(limit=50):
+            if (message.author == ctx.guild.me and 
+                message.content == welcome_text and 
+                message.components):  # Has button components
+                try:
+                    await message.delete()
+                except:
+                    pass
+        
+        # Send new welcome message
+        view = WelcomeView()
+        message = await ctx.send(welcome_text, view=view)
+        
+        # Store the new message reference
+        await bot.config_manager.set_welcome_message(ctx.guild.id, ctx.channel.id, message.id)
+        
+        await ctx.send("✅ Welcome message sent!")
+        
+        # Delete the command message after a short delay
+        try:
+            await ctx.message.delete()
+        except:
+            pass
     
     # Error handlers for specific commands
     @setup_reaction_role.error
