@@ -166,13 +166,37 @@ async def setup_commands(bot):
         
         await ctx.send(embed=embed)
     
+    @bot.command(name='welcome_message', aliases=['wm'])
+    @commands.has_permissions(manage_messages=True)
+    async def welcome_message(ctx):
+        """Send a welcome message with an entry button."""
+        # Create the button view
+        view = WelcomeView()
+        
+        # Send the welcome message with the button
+        await ctx.send("歡迎來到澪夜聯邦！", view=view)
+    
     # Error handlers for specific commands
     @setup_reaction_role.error
     @remove_reaction_role.error
     @list_reaction_roles.error
     @test_permissions.error
+    @welcome_message.error
     async def command_error_handler(ctx, error):
         if isinstance(error, commands.MissingPermissions):
             await ctx.send("❌ You need the 'Manage Roles' permission to use this command!")
         else:
             logging.error(f"Command error: {error}")
+
+class WelcomeView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)  # No timeout for persistent view
+    
+    @discord.ui.button(label='同意入境', style=discord.ButtonStyle.green, emoji='✅')
+    async def agree_entry(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Handle the agree entry button click"""
+        # You can add role assignment or other logic here
+        await interaction.response.send_message(
+            f"歡迎，{interaction.user.mention}！您已成功入境澪夜聯邦！", 
+            ephemeral=True
+        )

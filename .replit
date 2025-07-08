@@ -38,3 +38,7 @@ args = "pip install discord.py aiofiles && python main.py"
 [[ports]]
 localPort = 3540
 externalPort = 80
+
+[[ports]]
+localPort = 8575
+externalPort = 3000
