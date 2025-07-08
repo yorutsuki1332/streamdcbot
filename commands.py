@@ -195,12 +195,17 @@ class WelcomeView(discord.ui.View):
     @discord.ui.button(label='同意入境', style=discord.ButtonStyle.green, emoji='✅')
     async def agree_entry(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Handle the agree entry button click"""
-        # Find the '聯邦住民' role
-        role = None
-        for guild_role in interaction.guild.roles:
-            if guild_role.name == '聯邦住民':
-                role = guild_role
-                break
+        # Check if this is the correct server (澪夜聯邦)
+        if interaction.guild.id == 1288838226362105868:
+            # Use specific role ID for 澪夜聯邦 server
+            role = interaction.guild.get_role(1392004567524446218)
+        else:
+            # Fallback: search by name for other servers
+            role = None
+            for guild_role in interaction.guild.roles:
+                if guild_role.name == '聯邦住民':
+                    role = guild_role
+                    break
         
         if not role:
             await interaction.response.send_message(
