@@ -195,8 +195,57 @@ class WelcomeView(discord.ui.View):
     @discord.ui.button(label='同意入境', style=discord.ButtonStyle.green, emoji='✅')
     async def agree_entry(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Handle the agree entry button click"""
-        # You can add role assignment or other logic here
-        await interaction.response.send_message(
-            f"歡迎，{interaction.user.mention}！您已成功入境澪夜聯邦！", 
-            ephemeral=True
-        )
+        # Find the '聯邦住民' role
+        role = None
+        for guild_role in interaction.guild.roles:
+            if guild_role.name == '聯邦住民':
+                role = guild_role
+                break
+        
+        if not role:
+            await interaction.response.send_message(
+                "❌ 找不到'聯邦住民'角色。請聯繫管理員。", 
+                ephemeral=True
+            )
+            return
+        
+        # Check if user already has the role
+        if role in interaction.user.roles:
+            await interaction.response.send_message(
+                f"您已經是聯邦住民了，{interaction.user.mention}！", 
+                ephemeral=True
+            )
+            return
+        
+        # Check bot permissions
+        if not interaction.guild.me.guild_permissions.manage_roles:
+            await interaction.response.send_message(
+                "❌ 機器人沒有管理角色的權限。", 
+                ephemeral=True
+            )
+            return
+        
+        if role >= interaction.guild.me.top_role:
+            await interaction.response.send_message(
+                "❌ 機器人無法分配此角色（角色等級過高）。", 
+                ephemeral=True
+            )
+            return
+        
+        # Assign the role
+        try:
+            await interaction.user.add_roles(role, reason="Welcome button - 同意入境")
+            await interaction.response.send_message(
+                f"歡迎，{interaction.user.mention}！您已成功入境澪夜聯邦並獲得'聯邦住民'身分！", 
+                ephemeral=True
+            )
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "❌ 無法分配角色。請檢查機器人權限。", 
+                ephemeral=True
+            )
+        except discord.HTTPException as e:
+            await interaction.response.send_message(
+                f"❌ 分配角色時發生錯誤：{str(e)}", 
+                ephemeral=True
+            )
