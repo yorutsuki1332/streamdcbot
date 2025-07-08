@@ -17,6 +17,9 @@ class YouTubeMonitor:
         self.last_video_id = None
         self.check_interval = 300  # Check every 5 minutes
         self.guild_id = 1288838226362105868  # 澪夜聯邦 server ID
+        self.notification_channel_id = 1392034508747837520  # Specific channel for notifications
+        # Auto-set the Violette channel
+        asyncio.create_task(self._auto_setup_violette_channel())
         
     async def set_youtube_channel(self, channel_url_or_id: str) -> bool:
         """Set the YouTube channel to monitor"""
@@ -41,6 +44,13 @@ class YouTubeMonitor:
         except Exception as e:
             self.logger.error(f"Error setting YouTube channel: {e}")
             return False
+    
+    async def _auto_setup_violette_channel(self):
+        """Automatically set up Violette's YouTube channel"""
+        await asyncio.sleep(2)  # Wait for bot to be ready
+        if self.api_key:
+            await self.set_youtube_channel("https://www.youtube.com/@violetteyaaa")
+            self.logger.info("Auto-configured Violette's YouTube channel")
     
     async def _resolve_username_to_channel_id(self, username: str) -> Optional[str]:
         """Resolve @username to channel ID using YouTube API"""
@@ -103,14 +113,14 @@ class YouTubeMonitor:
             if not guild:
                 return
                 
-            # Find a suitable channel to send the notification
-            notification_channel = None
-            for channel in guild.text_channels:
-                if channel.permissions_for(guild.me).send_messages:
-                    notification_channel = channel
-                    break
-                    
+            # Get the specific notification channel
+            notification_channel = guild.get_channel(self.notification_channel_id)
             if not notification_channel:
+                self.logger.error(f"Notification channel {self.notification_channel_id} not found")
+                return
+                
+            if not notification_channel.permissions_for(guild.me).send_messages:
+                self.logger.error(f"No permission to send messages in channel {notification_channel.name}")
                 return
                 
             video_title = video_data['snippet']['title']
