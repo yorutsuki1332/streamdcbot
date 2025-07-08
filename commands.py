@@ -166,6 +166,41 @@ async def setup_commands(bot):
         
         await ctx.send(embed=embed)
     
+    @bot.command(name='set_youtube_channel', aliases=['syc'])
+    @commands.has_permissions(administrator=True)
+    async def set_youtube_channel(ctx, *, channel_url_or_id: str):
+        """
+        Set the YouTube channel to monitor for new videos.
+        
+        Usage: !set_youtube_channel <channel_url_or_id>
+        Example: !set_youtube_channel https://www.youtube.com/@username
+        Example: !set_youtube_channel UC1234567890
+        """
+        success = await bot.youtube_monitor.set_youtube_channel(channel_url_or_id)
+        if success:
+            await ctx.send(f"✅ YouTube channel set successfully! Now monitoring for new videos.")
+        else:
+            await ctx.send("❌ Failed to set YouTube channel. Please check the URL or channel ID.")
+    
+    @bot.command(name='youtube_status', aliases=['ys'])
+    @commands.has_permissions(administrator=True)
+    async def youtube_status(ctx):
+        """Check YouTube monitoring status."""
+        channel_id = bot.youtube_monitor.channel_id
+        api_key_set = bool(bot.youtube_monitor.api_key)
+        
+        embed = discord.Embed(title="YouTube Monitoring Status", color=discord.Color.blue())
+        embed.add_field(name="API Key", value="✅ Set" if api_key_set else "❌ Not Set", inline=True)
+        embed.add_field(name="Channel ID", value=channel_id if channel_id else "❌ Not Set", inline=True)
+        embed.add_field(name="Monitoring", value="✅ Active" if (api_key_set and channel_id) else "❌ Inactive", inline=True)
+        
+        if not api_key_set:
+            embed.add_field(name="Setup Required", 
+                          value="Please set YOUTUBE_API_KEY environment variable", 
+                          inline=False)
+        
+        await ctx.send(embed=embed)
+    
     @bot.command(name='welcome_message', aliases=['wm'])
     @commands.has_permissions(administrator=True)
     async def welcome_message(ctx):
@@ -181,6 +216,8 @@ async def setup_commands(bot):
     @remove_reaction_role.error
     @list_reaction_roles.error
     @test_permissions.error
+    @set_youtube_channel.error
+    @youtube_status.error
     @welcome_message.error
     async def command_error_handler(ctx, error):
         if isinstance(error, commands.MissingPermissions):

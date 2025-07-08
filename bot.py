@@ -1,9 +1,11 @@
 import discord
 from discord.ext import commands
 import logging
+import asyncio
 from commands import setup_commands
 from reaction_handler import ReactionHandler
 from config_manager import ConfigManager
+from youtube_monitor import YouTubeMonitor
 
 class ReactionRoleBot(commands.Bot):
     """Main Discord bot class for reaction role functionality"""
@@ -25,6 +27,7 @@ class ReactionRoleBot(commands.Bot):
         # Initialize components
         self.config_manager = ConfigManager()
         self.reaction_handler = ReactionHandler(self, self.config_manager)
+        self.youtube_monitor = YouTubeMonitor(self)
         
         # Set up logging
         self.logger = logging.getLogger(__name__)
@@ -62,6 +65,9 @@ class ReactionRoleBot(commands.Bot):
             # Send welcome message automatically on startup for 澪夜聯邦 server
             if guild.id == 1288838226362105868:
                 await self._send_welcome_message(guild)
+        
+        # Start YouTube monitoring
+        asyncio.create_task(self.youtube_monitor.start_monitoring())
         
     async def on_guild_join(self, guild):
         """Called when the bot joins a new guild"""

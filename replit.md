@@ -104,3 +104,4 @@ Changelog:
 - July 08, 2025. Added welcome message with "同意入境" button that assigns '聯邦住民' role
 - July 08, 2025. Updated all admin commands to require Administrator permission (integer 8)
 - July 08, 2025. Optimized role assignment using specific role ID 1392004567524446218 for '澪夜聯邦' server (ID: 1288838226362105868)
+- July 08, 2025. Added YouTube video monitoring system with automatic notifications (@everyone tags)
