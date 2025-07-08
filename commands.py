@@ -276,7 +276,7 @@ class WelcomeView(discord.ui.View):
 
 class WelcomeButton(discord.ui.Button):
     def __init__(self, emoji):
-        super().__init__(label='同意入境', style=discord.ButtonStyle.green, emoji=emoji)
+        super().__init__(label='同意入境', style=discord.ButtonStyle.primary, emoji=emoji)
     
     async def callback(self, interaction: discord.Interaction):
         """Handle the agree entry button click"""
