@@ -64,6 +64,7 @@ class ReactionRoleBot(commands.Bot):
             
             # Send welcome message automatically on startup for 澪夜聯邦 server
             if guild.id == 1288838226362105868:
+                await self._setup_custom_emoji(guild)
                 await self._send_welcome_message(guild)
         
         # Start YouTube monitoring
@@ -145,7 +146,7 @@ class ReactionRoleBot(commands.Bot):
                             self.logger.info(f"Deleted old welcome message in {guild.name} #{channel.name}")
                     
                     # Send new welcome message
-                    view = WelcomeView()
+                    view = WelcomeView(self)
                     message = await channel.send(welcome_text, view=view)
                     
                     # Store the message reference
@@ -159,3 +160,37 @@ class ReactionRoleBot(commands.Bot):
                 except Exception as e:
                     self.logger.error(f"Error sending welcome message: {e}")
                     continue
+    
+    async def _setup_custom_emoji(self, guild):
+        """Set up custom emoji for the welcome button"""
+        try:
+            # Check if the emoji already exists
+            emoji_name = "violette_unicorn"
+            existing_emoji = discord.utils.get(guild.emojis, name=emoji_name)
+            
+            if existing_emoji:
+                self.custom_emoji = existing_emoji
+                self.logger.info(f"Custom emoji {emoji_name} already exists")
+                return
+            
+            # Try to create the emoji if we have permissions
+            if guild.me.guild_permissions.manage_emojis:
+                try:
+                    with open('button_icon.png', 'rb') as image:
+                        emoji = await guild.create_custom_emoji(
+                            name=emoji_name,
+                            image=image.read(),
+                            reason="Welcome button icon"
+                        )
+                    self.custom_emoji = emoji
+                    self.logger.info(f"Created custom emoji: {emoji_name}")
+                except Exception as e:
+                    self.logger.warning(f"Could not create custom emoji: {e}")
+                    self.custom_emoji = None
+            else:
+                self.logger.warning("No permission to manage emojis")
+                self.custom_emoji = None
+                
+        except Exception as e:
+            self.logger.error(f"Error setting up custom emoji: {e}")
+            self.custom_emoji = None

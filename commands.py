@@ -234,7 +234,7 @@ async def setup_commands(bot):
                     pass
         
         # Send new welcome message
-        view = WelcomeView()
+        view = WelcomeView(bot)
         message = await ctx.send(welcome_text, view=view)
         
         # Store the new message reference
@@ -263,11 +263,22 @@ async def setup_commands(bot):
             logging.error(f"Command error: {error}")
 
 class WelcomeView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot=None):
         super().__init__(timeout=None)  # No timeout for persistent view
+        
+        # Use custom emoji if available, otherwise fallback to unicorn
+        emoji = '🦄'  # Default fallback
+        if bot and hasattr(bot, 'custom_emoji') and bot.custom_emoji:
+            emoji = bot.custom_emoji
+        
+        # Add the button dynamically
+        self.add_item(WelcomeButton(emoji))
+
+class WelcomeButton(discord.ui.Button):
+    def __init__(self, emoji):
+        super().__init__(label='同意入境', style=discord.ButtonStyle.green, emoji=emoji)
     
-    @discord.ui.button(label='同意入境', style=discord.ButtonStyle.green, emoji='✅')
-    async def agree_entry(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def callback(self, interaction: discord.Interaction):
         """Handle the agree entry button click"""
         logging.info(f"Button clicked by {interaction.user} in guild {interaction.guild.name} (ID: {interaction.guild.id})")
         
