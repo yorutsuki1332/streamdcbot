@@ -195,10 +195,13 @@ class WelcomeView(discord.ui.View):
     @discord.ui.button(label='同意入境', style=discord.ButtonStyle.green, emoji='✅')
     async def agree_entry(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Handle the agree entry button click"""
+        logging.info(f"Button clicked by {interaction.user} in guild {interaction.guild.name} (ID: {interaction.guild.id})")
+        
         # Check if this is the correct server (澪夜聯邦)
         if interaction.guild.id == 1288838226362105868:
             # Use specific role ID for 澪夜聯邦 server
             role = interaction.guild.get_role(1392004567524446218)
+            logging.info(f"Using specific role ID for 澪夜聯邦 server. Role found: {role}")
         else:
             # Fallback: search by name for other servers
             role = None
@@ -206,6 +209,7 @@ class WelcomeView(discord.ui.View):
                 if guild_role.name == '聯邦住民':
                     role = guild_role
                     break
+            logging.info(f"Searching by name in other server. Role found: {role}")
         
         if not role:
             await interaction.response.send_message(
@@ -240,16 +244,19 @@ class WelcomeView(discord.ui.View):
         # Assign the role
         try:
             await interaction.user.add_roles(role, reason="Welcome button - 同意入境")
+            logging.info(f"Successfully assigned role {role.name} to {interaction.user}")
             await interaction.response.send_message(
                 f"歡迎，{interaction.user.mention}！您已成功入境澪夜聯邦並獲得'聯邦住民'身分！", 
                 ephemeral=True
             )
         except discord.Forbidden:
+            logging.error(f"Forbidden: Cannot assign role {role.name} to {interaction.user}")
             await interaction.response.send_message(
                 "❌ 無法分配角色。請檢查機器人權限。", 
                 ephemeral=True
             )
         except discord.HTTPException as e:
+            logging.error(f"HTTP error assigning role: {e}")
             await interaction.response.send_message(
                 f"❌ 分配角色時發生錯誤：{str(e)}", 
                 ephemeral=True
