@@ -51,17 +51,24 @@ class ReactionRoleBot(commands.Bot):
         )
         await self.change_presence(activity=activity)
         
-        # Set bot nickname to 大賢者 if possible
+        # Set bot nickname to 大賢者 if possible and send welcome messages
         for guild in self.guilds:
             try:
                 await guild.me.edit(nick="大賢者")
             except (discord.Forbidden, discord.HTTPException):
                 # Ignore if we can't set nickname
                 pass
+            
+            # Send welcome message automatically on startup for 澪夜聯邦 server
+            if guild.id == 1288838226362105868:
+                await self._send_welcome_message(guild)
         
     async def on_guild_join(self, guild):
         """Called when the bot joins a new guild"""
         self.logger.info(f"Joined guild: {guild.name} (ID: {guild.id})")
+        
+        # Send welcome message automatically in the first available channel
+        await self._send_welcome_message(guild)
         
     async def on_guild_remove(self, guild):
         """Called when the bot leaves a guild"""
@@ -94,3 +101,21 @@ class ReactionRoleBot(commands.Bot):
         else:
             self.logger.error(f"Unhandled command error: {error}")
             await ctx.send("❌ An unexpected error occurred. Please try again later.")
+    
+    async def _send_welcome_message(self, guild):
+        """Send welcome message automatically to the first available channel"""
+        from commands import WelcomeView
+        
+        # Find the first channel where bot can send messages
+        for channel in guild.text_channels:
+            if channel.permissions_for(guild.me).send_messages:
+                try:
+                    view = WelcomeView()
+                    await channel.send("歡迎來到澪夜聯邦！", view=view)
+                    self.logger.info(f"Automatically sent welcome message in {guild.name} #{channel.name}")
+                    break
+                except discord.Forbidden:
+                    continue
+                except Exception as e:
+                    self.logger.error(f"Error sending welcome message: {e}")
+                    continue
