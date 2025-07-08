@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 from bot import ReactionRoleBot
+from keepAlive import keepAlive
 
 # Configure logging
 logging.basicConfig(
@@ -15,6 +16,9 @@ logging.basicConfig(
 
 async def main():
     """Main function to start the Discord bot"""
+    # Start the keep-alive server
+    keepAlive()
+    
     # Get bot token from environment variables
     token = os.getenv('DISCORD_BOT_TOKEN')
     

@@ -34,3 +34,7 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "pip install discord.py aiofiles && python main.py"
+
+[[ports]]
+localPort = 3540
+externalPort = 80
