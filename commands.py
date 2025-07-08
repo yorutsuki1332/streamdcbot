@@ -7,7 +7,7 @@ async def setup_commands(bot):
     """Set up all bot commands"""
     
     @bot.command(name='setup_reaction_role', aliases=['srr'])
-    @commands.has_permissions(manage_roles=True)
+    @commands.has_permissions(administrator=True)
     async def setup_reaction_role(ctx, message_id: int, emoji: str, role: str):
         """
         Set up a reaction role for a specific message.
@@ -69,7 +69,7 @@ async def setup_commands(bot):
             await ctx.send("❌ This emoji-role combination already exists for this message!")
     
     @bot.command(name='remove_reaction_role', aliases=['rrr'])
-    @commands.has_permissions(manage_roles=True)
+    @commands.has_permissions(administrator=True)
     async def remove_reaction_role(ctx, message_id: int, emoji: str):
         """
         Remove a reaction role setup from a message.
@@ -102,7 +102,7 @@ async def setup_commands(bot):
             await ctx.send("❌ No reaction role found for that emoji on that message!")
     
     @bot.command(name='list_reaction_roles', aliases=['lrr'])
-    @commands.has_permissions(manage_roles=True)
+    @commands.has_permissions(administrator=True)
     async def list_reaction_roles(ctx):
         """List all reaction role setups in this server."""
         configs = await bot.config_manager.get_guild_configs(ctx.guild.id)
@@ -134,7 +134,7 @@ async def setup_commands(bot):
         await ctx.send(embed=embed)
     
     @bot.command(name='test_permissions')
-    @commands.has_permissions(manage_roles=True)
+    @commands.has_permissions(administrator=True)
     async def test_permissions(ctx):
         """Test bot permissions for reaction role functionality."""
         permissions = ctx.guild.me.guild_permissions
@@ -167,7 +167,7 @@ async def setup_commands(bot):
         await ctx.send(embed=embed)
     
     @bot.command(name='welcome_message', aliases=['wm'])
-    @commands.has_permissions(manage_messages=True)
+    @commands.has_permissions(administrator=True)
     async def welcome_message(ctx):
         """Send a welcome message with an entry button."""
         # Create the button view
@@ -184,7 +184,7 @@ async def setup_commands(bot):
     @welcome_message.error
     async def command_error_handler(ctx, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("❌ You need the 'Manage Roles' permission to use this command!")
+            await ctx.send("❌ You need 'Administrator' permission to use this command!")
         else:
             logging.error(f"Command error: {error}")
 
