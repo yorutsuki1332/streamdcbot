@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import logging
 import asyncio
-from commands import setup_commands, setup_music_commands
+from commands import setup_commands
 from reaction_handler import ReactionHandler
 from config_manager import ConfigManager
 from youtube_monitor import YouTubeMonitor
@@ -40,9 +40,8 @@ class ReactionRoleBot(commands.Bot):
         # Load existing configurations
         await self.config_manager.load_config()
         
-        # Set up commands
+        # Set up all commands (reaction roles, YouTube, music)
         await setup_commands(self)
-        await setup_music_commands(self)
         
         self.logger.info("Bot setup completed")
         
