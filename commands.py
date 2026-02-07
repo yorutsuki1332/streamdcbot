@@ -120,6 +120,35 @@ async def setup_commands(bot):
         embed.add_field(name="Channel", value=channel_id if channel_id else "❌ Not Set")
         await ctx.send(embed=embed)
     
+    @bot.command(name='fix_voice_permissions', aliases=['fvp'])
+    @commands.has_permissions(administrator=True)
+    async def fix_voice_permissions(ctx, channel: discord.VoiceChannel = None):
+        """Fix bot voice channel permissions."""
+        if not channel:
+            if ctx.author.voice:
+                channel = ctx.author.voice.channel
+            else:
+                await ctx.send("❌ Please specify a voice channel or join one!")
+                return
+        
+        try:
+            # Get bot role
+            bot_role = ctx.guild.me.top_role
+            
+            # Set permissions for bot
+            perms = discord.PermissionOverwrite(
+                connect=True,
+                speak=True,
+                stream=True,
+                use_voice_activation=True
+            )
+            
+            await channel.set_permissions(ctx.guild.me, overwrite=perms)
+            await ctx.send(f"✅ Fixed permissions for {channel.mention}!\n"
+                          "Bot now has: Connect, Speak, Stream, Voice Activity permissions")
+        except Exception as e:
+            await ctx.send(f"❌ Failed to fix permissions: {str(e)}")
+    
     @bot.command(name='welcome_message', aliases=['wm'])
     @commands.has_permissions(administrator=True)
     async def welcome_message(ctx):
@@ -165,29 +194,48 @@ async def setup_commands(bot):
         perms = channel.permissions_for(ctx.guild.me)
         
         if not perms.connect:
-            await ctx.send("❌ I don't have permission to connect to your voice channel!")
+            await ctx.send("❌ I don't have permission to **Connect** to your voice channel!")
             return
         
         if not perms.speak:
-            await ctx.send("❌ I don't have permission to speak in your voice channel!")
+            await ctx.send("❌ I don't have permission to **Speak** in your voice channel!")
+            return
+        
+        # Check if channel is full
+        if channel.user_limit and len(channel.members) >= channel.user_limit:
+            await ctx.send(f"❌ Voice channel is full ({len(channel.members)}/{channel.user_limit})")
             return
         
         # Connect or get existing voice client
         voice_client = bot.music_player.voice_clients.get(ctx.guild.id)
         if not voice_client:
             try:
-                voice_client = await channel.connect(timeout=10.0, reconnect=True)
+                # Increase timeout and add connection attempts
+                voice_client = await channel.connect(timeout=30.0, reconnect=True)
                 bot.music_player.voice_clients[ctx.guild.id] = voice_client
             except asyncio.TimeoutError:
-                await ctx.send("❌ Connection timeout - voice channel is unreachable")
+                await ctx.send("❌ **Connection timeout** - Voice channel is unreachable. Please check:\n"
+                               "• Bot has Connect & Speak permissions\n"
+                               "• Voice channel isn't full\n"
+                               "• Discord servers are not down")
                 return
-            except discord.errors.ClientException:
-                await ctx.send("❌ Already connected to a voice channel in this server")
-                voice_client = bot.music_player.voice_clients.get(ctx.guild.id)
-                if not voice_client:
+            except discord.errors.ClientException as ce:
+                if "already" in str(ce).lower():
+                    # Try to recover existing connection
+                    await ctx.send("⚠️ Recovering existing connection...")
+                    voice_client = bot.music_player.voice_clients.get(ctx.guild.id)
+                    if not voice_client:
+                        try:
+                            voice_client = await channel.connect(timeout=30.0, reconnect=True)
+                            bot.music_player.voice_clients[ctx.guild.id] = voice_client
+                        except Exception as e:
+                            await ctx.send(f"❌ Connection recovery failed: {str(e)}")
+                            return
+                else:
+                    await ctx.send(f"❌ {str(ce)}")
                     return
             except Exception as e:
-                await ctx.send(f"❌ Failed to connect: {str(e)}")
+                await ctx.send(f"❌ Failed to connect: {type(e).__name__} - {str(e)}")
                 return
         
         # Add to queue and play
