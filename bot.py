@@ -57,18 +57,20 @@ class ReactionRoleBot(commands.Bot):
         )
         await self.change_presence(activity=activity)
         
-        # Set bot nickname to 大賢者 if possible and send welcome messages
+        # Only process specific guild on startup to avoid rate limiting
         for guild in self.guilds:
-            try:
-                await guild.me.edit(nick="大賢者")
-            except (discord.Forbidden, discord.HTTPException):
-                # Ignore if we can't set nickname
-                pass
-            
-            # Send welcome message automatically on startup for 澪夜聯邦 server
+            # Only do setup for the main server to reduce API calls
             if guild.id == 1288838226362105868:
+                try:
+                    await asyncio.sleep(1)  # Add delay to prevent rate limiting
+                    await guild.me.edit(nick="大賢者")
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+                
+                # Setup emoji and welcome message only for main server
                 await self._setup_custom_emoji(guild)
                 await self._send_welcome_message(guild)
+                break  # Only process the main server
         
         # Start YouTube monitoring
         asyncio.create_task(self.youtube_monitor.start_monitoring())
