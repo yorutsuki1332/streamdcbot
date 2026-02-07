@@ -569,7 +569,7 @@ async def setup_music_commands(bot):
         else:
             await ctx.send(f"❌ Could not find lyrics for '{song_title}'")
     
-    @bot.command(name='search', aliases=['s'])
+    @bot.command(name='search', aliases=['find', 'searchmusic'])
     async def search(ctx, *, query: str):
         """
         Search and play a song from YouTube.
