@@ -6,6 +6,7 @@ from commands import setup_commands
 from reaction_handler import ReactionHandler
 from config_manager import ConfigManager
 from youtube_monitor import YouTubeMonitor
+import constants
 
 class ReactionRoleBot(commands.Bot):
     """Main Discord bot class for reaction role functionality"""
@@ -113,7 +114,7 @@ class ReactionRoleBot(commands.Bot):
         """Send welcome message automatically to the first available channel"""
         from commands import WelcomeView
         
-        welcome_text = "歡迎來到澪夜聯邦！"
+        welcome_text = constants.WELCOME_TEXT
         
         # Check if we already have a stored welcome message
         stored_welcome = await self.config_manager.get_welcome_message(guild.id)
