@@ -136,7 +136,7 @@ async def setup_commands(bot):
         except Exception as e:
             await ctx.send(f"❌ Failed to join: {type(e).__name__}: {str(e)}")
     
-    @bot.command(name='leave', aliases=['l'])
+    @bot.command(name='leave')
     async def leave(ctx):
         """Leave voice channel."""
         if ctx.guild.id in bot.music_player.voice_clients:
