@@ -1,16 +1,17 @@
 from flask import Flask
 from threading import Thread
-import random
+import os
 
-app = Flask("")
+app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return("Online!")
+    return "Online!"
 
 def run():
-    app.run(host="0.0.0.0", port=random.randint(2000, 9000))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 def keepAlive():
-    thread = Thread(target=run)
+    thread = Thread(target=run, daemon=True)
     thread.start()
