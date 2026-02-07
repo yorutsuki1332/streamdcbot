@@ -1,13 +1,35 @@
 部署到 Render 的快速說明
 
+**系統要求：**
+- Python 3.11+
+- **FFmpeg** (用於音樂播放，必需！)
+
 - 在 Render 建立新服務 (Web Service)，選擇連接你的 Git repo
 - Start Command: `python main.py`（或使用根目錄的 `Procfile`）
 - Environment Variables:
   - `DISCORD_BOT_TOKEN` = 你的 Discord bot token
 - Render 會自動提供 `PORT` 環境變數；程式會綁定該埠以回應健康檢查
-- 建議使用 Python 3.11（或與 `pyproject.toml` 相符的版本）
 
 本機測試：
+
+**安裝 FFmpeg：**
+
+Windows:
+```powershell
+winget install ffmpeg
+```
+
+macOS:
+```bash
+brew install ffmpeg
+```
+
+Linux (Ubuntu/Debian):
+```bash
+sudo apt-get install ffmpeg
+```
+
+啟動 Bot：
 
 ```bash
 # macOS / Linux
