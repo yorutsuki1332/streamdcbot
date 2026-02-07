@@ -29,6 +29,7 @@ class YouTubeAudio(discord.PCMVolumeTransformer):
             'no_warnings': True,
             'default_search': 'ytsearch',
             'socket_timeout': 30,
+            'cookiefile': 'cookies.txt',  # Load cookies if available
             'extractor_args': {
                 'youtube': {
                     'player_skip': ['webpage', 'js']
@@ -187,6 +188,7 @@ class MusicPlayer:
             'quiet': True,
             'no_warnings': True,
             'default_search': 'ytsearch',
+            'cookiefile': 'cookies.txt',
             'extractor_args': {
                 'youtube': {
                     'player_skip': ['webpage', 'js']
@@ -221,6 +223,7 @@ class MusicPlayer:
             'quiet': True,
             'no_warnings': True,
             'extract_flat': True,
+            'cookiefile': 'cookies.txt',
             'extractor_args': {
                 'youtube': {
                     'player_skip': ['webpage', 'js']
