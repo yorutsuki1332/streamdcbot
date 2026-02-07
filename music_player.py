@@ -28,6 +28,15 @@ class YouTubeAudio(discord.PCMVolumeTransformer):
             'quiet': True,
             'no_warnings': True,
             'default_search': 'ytsearch',
+            'socket_timeout': 30,
+            'extractor_args': {
+                'youtube': {
+                    'player_skip': ['webpage', 'js']
+                }
+            },
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
         }
         
         try:
@@ -39,7 +48,11 @@ class YouTubeAudio(discord.PCMVolumeTransformer):
                 
             filename = data['url']
             return cls(
-                discord.FFmpegPCMAudio(filename, before_options="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5", options="-vn"),
+                discord.FFmpegPCMAudio(
+                    filename,
+                    before_options="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+                    options="-vn -q:a 9 -acodec libopus -f s16le -ac 2 -ar 48000"
+                ),
                 data=data
             )
         except Exception as e:
@@ -174,6 +187,14 @@ class MusicPlayer:
             'quiet': True,
             'no_warnings': True,
             'default_search': 'ytsearch',
+            'extractor_args': {
+                'youtube': {
+                    'player_skip': ['webpage', 'js']
+                }
+            },
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
         }
         
         try:
@@ -200,6 +221,14 @@ class MusicPlayer:
             'quiet': True,
             'no_warnings': True,
             'extract_flat': True,
+            'extractor_args': {
+                'youtube': {
+                    'player_skip': ['webpage', 'js']
+                }
+            },
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
         }
         
         try:

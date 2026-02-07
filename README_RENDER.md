@@ -41,6 +41,14 @@ $env:DISCORD_BOT_TOKEN="your_token_here"
 python main.py
 ```
 
+**YouTube 音樂播放注意事項：**
+
+bot 使用 yt-dlp 從 YouTube 提取音頻。如果遇到 "Sign in to confirm you're not a bot" 錯誤，這是 YouTube 的反爬蟲機制。目前的解決方案：
+- 本機測試時，通常會自動處理
+- Render 上部署時，可能需要設定 YouTube cookies（進階用法）
+
+簡單測試：使用 `!play <youtube_url>` 測試小視頻，YouTube 會逐漸解除限制。
+
 若需要讓 Render 自動建立服務，於 Dashboard 建立 Web Service，部署後檢查 Logs 確認 bot 成功啟動。
 
 GitHub 自動部署（選用）:
