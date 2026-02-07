@@ -18,8 +18,9 @@ class YouTubeMonitor:
         self.check_interval = 300  # Check every 5 minutes
         self.guild_id = 1288838226362105868  # 澪夜聯邦 server ID
         self.notification_channel_id = 1392034508747837520  # Specific channel for notifications
-        # Auto-set the Violette channel
-        asyncio.create_task(self._auto_setup_violette_channel())
+        # Auto-set the Violette channel only if API key exists
+        if self.api_key:
+            asyncio.create_task(self._auto_setup_violette_channel())
         
     async def set_youtube_channel(self, channel_url_or_id: str) -> bool:
         """Set the YouTube channel to monitor"""
