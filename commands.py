@@ -346,3 +346,264 @@ class WelcomeButton(discord.ui.Button):
                 f"❌ 分配角色時發生錯誤：{str(e)}", 
                 ephemeral=True
             )
+# Music player commands
+async def setup_music_commands(bot):
+    """Set up music player commands"""
+    
+    @bot.command(name='play', aliases=['p'])
+    async def play(ctx, *, url: str):
+        """
+        Play a YouTube video or playlist.
+        
+        Usage: !play <YouTube URL or search query>
+        Example: !play https://www.youtube.com/watch?v=dQw4w9WgXcQ
+        Example: !play lofi hip hop beats
+        """
+        if not ctx.author.voice:
+            await ctx.send("❌ You must be in a voice channel to play music!")
+            return
+        
+        # Connect to voice channel if not already connected
+        voice_client = None
+        if ctx.guild.id in bot.music_player.voice_clients:
+            voice_client = bot.music_player.voice_clients[ctx.guild.id]
+        else:
+            try:
+                voice_client = await ctx.author.voice.channel.connect()
+                bot.music_player.voice_clients[ctx.guild.id] = voice_client
+            except Exception as e:
+                await ctx.send(f"❌ Failed to connect to voice channel: {str(e)}")
+                return
+        
+        # Add to queue
+        async with ctx.typing():
+            result = await bot.music_player.add_to_queue(ctx.guild.id, url)
+        
+        if not result['success']:
+            await ctx.send(f"❌ {result.get('error', 'Failed to add to queue')}")
+            return
+        
+        # If nothing is playing, start playback
+        if not voice_client.is_playing() and not voice_client.is_paused():
+            song = await bot.music_player.play_next(ctx.guild.id, voice_client)
+            if song:
+                embed = discord.Embed(
+                    title="🎵 Now Playing",
+                    description=f"[{song['title']}]({song['url']})",
+                    color=discord.Color.purple()
+                )
+                if song['duration']:
+                    embed.add_field(name="Duration", value=bot.music_player.format_duration(song['duration']))
+                await ctx.send(embed=embed)
+        else:
+            embed = discord.Embed(
+                title="📝 Added to Queue",
+                description=f"**{result['count']}** song(s) added",
+                color=discord.Color.blue()
+            )
+            if result['songs']:
+                song_list = "\n".join([f"• {s['title']}" for s in result['songs'][:5]])
+                if result['count'] > 5:
+                    song_list += f"\n... and {result['count'] - 5} more"
+                embed.add_field(name="Songs", value=song_list)
+            await ctx.send(embed=embed)
+    
+    @bot.command(name='queue', aliases=['q'])
+    async def queue(ctx):
+        """Display the current music queue."""
+        queue = await bot.music_player.get_queue(ctx.guild.id)
+        current = bot.music_player.current_playing.get(ctx.guild.id)
+        
+        embed = discord.Embed(
+            title="🎵 Music Queue",
+            color=discord.Color.purple()
+        )
+        
+        if current:
+            embed.add_field(
+                name="Currently Playing",
+                value=f"[{current['title']}]({current['url']})",
+                inline=False
+            )
+        
+        if not queue:
+            embed.add_field(
+                name="Queue",
+                value="Queue is empty",
+                inline=False
+            )
+        else:
+            queue_text = "\n".join([f"{i+1}. {s['title']}" for i, s in enumerate(queue[:10])])
+            if len(queue) > 10:
+                queue_text += f"\n... and {len(queue) - 10} more"
+            embed.add_field(
+                name=f"Queue ({len(queue)} songs)",
+                value=queue_text,
+                inline=False
+            )
+        
+        await ctx.send(embed=embed)
+    
+    @bot.command(name='skip', aliases=['s'])
+    async def skip(ctx):
+        """Skip to the next song."""
+        if await bot.music_player.skip(ctx.guild.id):
+            await ctx.send("⏭️ Skipped to next song!")
+        else:
+            await ctx.send("❌ No song is currently playing!")
+    
+    @bot.command(name='pause')
+    async def pause(ctx):
+        """Pause the current song."""
+        if await bot.music_player.pause(ctx.guild.id):
+            await ctx.send("⏸️ Music paused!")
+        else:
+            await ctx.send("❌ No song is currently playing!")
+    
+    @bot.command(name='resume', aliases=['r'])
+    async def resume(ctx):
+        """Resume the paused music."""
+        if await bot.music_player.resume(ctx.guild.id):
+            await ctx.send("▶️ Music resumed!")
+        else:
+            await ctx.send("❌ No paused music to resume!")
+    
+    @bot.command(name='stop')
+    async def stop(ctx):
+        """Stop music and disconnect from voice channel."""
+        await bot.music_player.stop(ctx.guild.id)
+        await ctx.send("⏹️ Music stopped and disconnected!")
+    
+    @bot.command(name='loop', aliases=['l'])
+    async def loop(ctx):
+        """Toggle loop mode."""
+        is_looping = await bot.music_player.toggle_loop(ctx.guild.id)
+        status = "✅ Loop enabled" if is_looping else "❌ Loop disabled"
+        await ctx.send(status)
+    
+    @bot.command(name='volume', aliases=['vol', 'v'])
+    async def volume(ctx, level: int = None):
+        """
+        Set or view the volume.
+        
+        Usage: !volume <0-100>
+        Example: !volume 50 (sets volume to 50%)
+        Example: !volume (shows current volume)
+        """
+        if level is None:
+            current_vol = bot.music_player.get_volume(ctx.guild.id)
+            await ctx.send(f"🔊 Current volume: {current_vol:.0f}%")
+            return
+        
+        if not 0 <= level <= 100:
+            await ctx.send("❌ Volume must be between 0 and 100!")
+            return
+        
+        if await bot.music_player.set_volume(ctx.guild.id, level / 100):
+            await ctx.send(f"🔊 Volume set to {level}%")
+        else:
+            await ctx.send("❌ Failed to set volume!")
+    
+    @bot.command(name='now', aliases=['np', 'nowplaying'])
+    async def now_playing(ctx):
+        """Show current song with progress bar."""
+        progress = bot.music_player.get_now_playing_progress(ctx.guild.id)
+        
+        if not progress:
+            await ctx.send("❌ Nothing is currently playing!")
+            return
+        
+        # Create progress bar
+        bar_length = 20
+        filled = int((progress['progress'] / 100) * bar_length)
+        bar = "█" * filled + "░" * (bar_length - filled)
+        
+        elapsed_str = bot.music_player.format_duration(progress['elapsed'])
+        duration_str = bot.music_player.format_duration(progress['duration'])
+        
+        embed = discord.Embed(
+            title="🎵 Now Playing",
+            description=f"[{progress['title']}]",
+            color=discord.Color.purple()
+        )
+        embed.add_field(
+            name="Progress",
+            value=f"{bar}\n{elapsed_str} / {duration_str}",
+            inline=False
+        )
+        embed.add_field(
+            name="Progress %",
+            value=f"{progress['progress']}%",
+            inline=False
+        )
+        
+        await ctx.send(embed=embed)
+    
+    @bot.command(name='lyrics', aliases=['ly'])
+    async def lyrics(ctx, *, song_title: str = None):
+        """
+        Get lyrics for a song.
+        
+        Usage: !lyrics <song title>
+        Example: !lyrics Imagine John Lennon
+        Note: Uses Genius API (requires API key for full functionality)
+        """
+        if song_title is None:
+            current = bot.music_player.current_playing.get(ctx.guild.id)
+            if not current:
+                await ctx.send("❌ Please specify a song title or play a song first!")
+                return
+            song_title = current['title']
+        
+        async with ctx.typing():
+            lyrics = await bot.music_player.get_lyrics(song_title)
+        
+        if lyrics:
+            # Split into chunks if too long
+            if len(lyrics) > 2000:
+                chunks = [lyrics[i:i+2000] for i in range(0, len(lyrics), 2000)]
+                for chunk in chunks:
+                    await ctx.send(chunk)
+            else:
+                await ctx.send(lyrics)
+        else:
+            await ctx.send(f"❌ Could not find lyrics for '{song_title}'")
+    
+    @bot.command(name='search', aliases=['s'])
+    async def search(ctx, *, query: str):
+        """
+        Search and play a song from YouTube.
+        
+        Usage: !search <song name or artist>
+        Example: !search Bohemian Rhapsody Queen
+        """
+        if not ctx.author.voice:
+            await ctx.send("❌ You must be in a voice channel to play music!")
+            return
+        
+        # Connect to voice channel if not already connected
+        voice_client = None
+        if ctx.guild.id in bot.music_player.voice_clients:
+            voice_client = bot.music_player.voice_clients[ctx.guild.id]
+        else:
+            try:
+                voice_client = await ctx.author.voice.channel.connect()
+                bot.music_player.voice_clients[ctx.guild.id] = voice_client
+            except Exception as e:
+                await ctx.send(f"❌ Failed to connect to voice channel: {str(e)}")
+                return
+        
+        async with ctx.typing():
+            song = await bot.music_player.search_and_play(ctx.guild.id, query, voice_client)
+        
+        if song:
+            embed = discord.Embed(
+                title="🔍 Found and Playing",
+                description=f"[{song['title']}]({song['url']})",
+                color=discord.Color.green()
+            )
+            if song['duration']:
+                embed.add_field(name="Duration", value=bot.music_player.format_duration(song['duration']))
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(f"❌ Could not find a song matching '{query}'")

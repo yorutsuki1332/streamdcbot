@@ -2,10 +2,11 @@ import discord
 from discord.ext import commands
 import logging
 import asyncio
-from commands import setup_commands
+from commands import setup_commands, setup_music_commands
 from reaction_handler import ReactionHandler
 from config_manager import ConfigManager
 from youtube_monitor import YouTubeMonitor
+from music_player import MusicPlayer
 import constants
 
 class ReactionRoleBot(commands.Bot):
@@ -29,6 +30,7 @@ class ReactionRoleBot(commands.Bot):
         self.config_manager = ConfigManager()
         self.reaction_handler = ReactionHandler(self, self.config_manager)
         self.youtube_monitor = YouTubeMonitor(self)
+        self.music_player = MusicPlayer(self)
         
         # Set up logging
         self.logger = logging.getLogger(__name__)
@@ -40,6 +42,7 @@ class ReactionRoleBot(commands.Bot):
         
         # Set up commands
         await setup_commands(self)
+        await setup_music_commands(self)
         
         self.logger.info("Bot setup completed")
         
