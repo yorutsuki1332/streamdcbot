@@ -60,6 +60,9 @@ GitHub 自動部署（選用）:
 
 使用 `render.yaml`:
 
-- 專案包含 `render.yaml`，可在 Render 建立服務時使用此檔案作為基礎設定（IaC）。建立服務後，請到 Dashboard 手動在 Environment Variables 加上 `DISCORD_BOT_TOKEN`。
+- 專案包含 `render.yaml`，可在 Render 建立服務時使用此檔案作為基礎設定（IaC）
+- **重要：** `render.yaml` 已配置自動在 Render 環境中安裝 FFmpeg（Linux 系統）
+- 建立服務後，請到 Dashboard 手動在 Environment Variables 加上 `DISCORD_BOT_TOKEN`
+- Render 會自動執行 `buildCommand` 安裝 FFmpeg 和 Python 依賴，無需手動操作
 
 注意: 切勿把 `DISCORD_BOT_TOKEN` 放進 repo；必須在 Render Dashboard 的 Environment Variables 或 GitHub Secrets 中設定。
